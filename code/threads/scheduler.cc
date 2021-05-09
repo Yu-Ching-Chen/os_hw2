@@ -88,6 +88,8 @@ Scheduler::ReadyToRun (Thread *thread)
     // Hint: L1 ReadyQueue is preemptive SRTN(Shortest Remaining Time Next).
     // When putting a new thread into L1 ReadyQueue, you need to check whether preemption or not.
     thread->setWaitTime(stats->userTicks);
+    thread->setRunTime(0);
+    thread->setRRTime(0);
 
     if (thread->getPriority() >= 100) {
         L1ReadyQueue->Insert(thread);
@@ -155,9 +157,6 @@ Scheduler::FindNextToRun ()
             << "]" << ": Thread " << "[" << t->getID() << "]" 
             << " is removed from queue L3");
     }
-    if (t != NULL) {
-        t->setRunTime(kernel->stats->userTicks);
-    }
     return t;
     //<TODO>
 }
@@ -213,14 +212,10 @@ Scheduler::Run (Thread *nextThread, bool finishing)
     // in switch.s.  You may have to think
     // a bit to figure out what happens after this, both from the point
     // of view of the thread and from the perspective of the "outside world".
-    
-    DEBUG(dbgMLFQ, "[ContextSwitch] Tick " << "[" << kernel->stats->totalTicks 
-        << "]: Thread [" << nextThread->getID() 
-        << "] is now selected for execution, thread [" 
-        << oldThread->getID() << "] is replaced, and it has executed " 
-        << "[" << kernel->stats->userTicks - oldThread->getRunTime() << "] ticks");
+ 
 
     cout << "Switching from: " << oldThread->getID() << " to: " << nextThread->getID() << endl;
+
     SWITCH(oldThread, nextThread);
 
     // we're back, running oldThread
@@ -318,7 +313,13 @@ Scheduler::UpdatePriority()
     for (; !iter1->IsDone(); iter1->Next()) {
         if (ToRemove != NULL) {
 	    L2ReadyQueue->Remove(ToRemove);
+    	    DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
+                << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
+                << " is removed from queue L2");
             L1ReadyQueue->Insert(ToRemove);
+    	    DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << kernel->stats->totalTicks << "]" 
+                << ": Thread "  << "[" << ToRemove->getID() << "]" 
+                << " is inserted into queue L1");
             ToRemove = NULL;
         }
         t = iter1->Item();
@@ -334,7 +335,13 @@ Scheduler::UpdatePriority()
     }
     if (ToRemove != NULL) {
 	L2ReadyQueue->Remove(ToRemove);
+    	DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
+            << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
+            << " is removed from queue L2");
         L1ReadyQueue->Insert(ToRemove);
+    	DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << kernel->stats->totalTicks << "]" 
+            << ": Thread "  << "[" << ToRemove->getID() << "]" 
+            << " is inserted into queue L1");
         ToRemove = NULL;
     }
     delete iter1;
@@ -343,7 +350,13 @@ Scheduler::UpdatePriority()
     for (; !iter2->IsDone(); iter2->Next()) {
         if (ToRemove != NULL) {
 	    L3ReadyQueue->Remove(ToRemove);
+    	    DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
+                << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
+                << " is removed from queue L3");
             L2ReadyQueue->Insert(ToRemove);
+    	    DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << kernel->stats->totalTicks << "]" 
+                << ": Thread "  << "[" << ToRemove->getID() << "]" 
+                << " is inserted into queue L2");
             ToRemove = NULL;
         }
         t = iter2->Item();
@@ -359,7 +372,13 @@ Scheduler::UpdatePriority()
     }
     if (ToRemove != NULL) {
 	L3ReadyQueue->Remove(ToRemove);
+    	DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
+            << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
+            << " is removed from queue L3");
         L2ReadyQueue->Insert(ToRemove);
+    	DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << kernel->stats->totalTicks << "]" 
+            << ": Thread "  << "[" << ToRemove->getID() << "]" 
+            << " is inserted into queue L2");
         ToRemove = NULL;
     }
     delete iter2;

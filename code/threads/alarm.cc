@@ -54,7 +54,6 @@ Alarm::CallBack()
     
 
     //<TODO>
-    int workTime;
     Thread *t = kernel->currentThread;
 
     // In each 100 ticks,    
@@ -62,6 +61,13 @@ Alarm::CallBack()
     // 2. Update RunTime & RRTime
     // 3. Check Round Robin
     kernel->scheduler->UpdatePriority();
+    t->setRunTime(t->getRunTime() + 100);
+    t->setRRTime(t->getRRTime() + 100);
+    if (t->getPriority() <= 49) {
+        if (t->getRRTime() == 200) {
+            interrupt->YieldOnReturn();
+        }
+    }
     //<TODO>
     
      //    if (status == IdleMode) {    // is it time to quit?
