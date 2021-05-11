@@ -96,8 +96,16 @@ Scheduler::ReadyToRun (Thread *thread)
     	DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << stats->totalTicks << "]" 
             << ": Thread "  << "[" << thread->getID() << "]" 
             << " is inserted into queue L1");
-        if(thread->getRemainingBurstTime() < kernel->currentThread->getRemainingBurstTime()) {
-	    kernel->interrupt->YieldOnReturn();
+        if(kernel->currentThread != NULL) {
+            if (kernel->currentThread->getPriority() <= 99) {
+	    	kernel->interrupt->YieldOnReturn();
+	    }
+	    else {
+		if (thread->getRemainingBurstTime() 
+		    < kernel->currentThread->getRemainingBurstTime()) {
+		    kernel->interrupt->YieldOnReturn();
+                }
+	    }
 	}
     }
     else if (thread->getPriority() >= 50) {
@@ -308,21 +316,19 @@ Scheduler::UpdatePriority()
     int priority;
     Thread *t;
     Thread *ToRemove = NULL;
+    ListIterator<Thread *> *iter;
 
-    ListIterator<Thread *> *iter1 = new ListIterator<Thread *>(L2ReadyQueue);
-    for (; !iter1->IsDone(); iter1->Next()) {
+    iter = new ListIterator<Thread *>(L2ReadyQueue);
+    for (; !iter->IsDone(); iter->Next()) {
         if (ToRemove != NULL) {
 	    L2ReadyQueue->Remove(ToRemove);
     	    DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
                 << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
                 << " is removed from queue L2");
-            L1ReadyQueue->Insert(ToRemove);
-    	    DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << kernel->stats->totalTicks << "]" 
-                << ": Thread "  << "[" << ToRemove->getID() << "]" 
-                << " is inserted into queue L1");
+            ReadyToRun(ToRemove);
             ToRemove = NULL;
         }
-        t = iter1->Item();
+        t = iter->Item();
         if (Ticks - t->getWaitTime() >= 400) {
      	    priority = t->getPriority() + 10;
             DEBUG(dbgMLFQ, "[UpdatePriority] Tick [" << kernel->stats->totalTicks <<
@@ -338,28 +344,22 @@ Scheduler::UpdatePriority()
     	DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
             << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
             << " is removed from queue L2");
-        L1ReadyQueue->Insert(ToRemove);
-    	DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << kernel->stats->totalTicks << "]" 
-            << ": Thread "  << "[" << ToRemove->getID() << "]" 
-            << " is inserted into queue L1");
+        ReadyToRun(ToRemove);
         ToRemove = NULL;
     }
-    delete iter1;
+    delete iter;
 
-    ListIterator<Thread *> *iter2 = new ListIterator<Thread *>(L3ReadyQueue);
-    for (; !iter2->IsDone(); iter2->Next()) {
+    iter = new ListIterator<Thread *>(L3ReadyQueue);
+    for (; !iter->IsDone(); iter->Next()) {
         if (ToRemove != NULL) {
 	    L3ReadyQueue->Remove(ToRemove);
     	    DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
                 << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
                 << " is removed from queue L3");
-            L2ReadyQueue->Insert(ToRemove);
-    	    DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << kernel->stats->totalTicks << "]" 
-                << ": Thread "  << "[" << ToRemove->getID() << "]" 
-                << " is inserted into queue L2");
+            ReadyToRun(ToRemove);
             ToRemove = NULL;
         }
-        t = iter2->Item();
+        t = iter->Item();
         if (Ticks - t->getWaitTime() >= 400) {
      	    priority = t->getPriority() + 10;
             DEBUG(dbgMLFQ, "[UpdatePriority] Tick [" << kernel->stats->totalTicks <<
@@ -375,13 +375,10 @@ Scheduler::UpdatePriority()
     	DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
             << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
             << " is removed from queue L3");
-        L2ReadyQueue->Insert(ToRemove);
-    	DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << kernel->stats->totalTicks << "]" 
-            << ": Thread "  << "[" << ToRemove->getID() << "]" 
-            << " is inserted into queue L2");
+        ReadyToRun(ToRemove);
         ToRemove = NULL;
     }
-    delete iter2;
+    delete iter;
 }
 
 // <TODO>
