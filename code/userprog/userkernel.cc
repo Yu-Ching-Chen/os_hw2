@@ -179,6 +179,8 @@ ForkExecute(Thread *t)
     // When Thread t goes to Running state in the first time, its file should be loaded & executed.
     // Hint: This function would not be called until Thread t is on running state.
     t->space = new AddrSpace();
+    t->setRunTime(0);
+    t->setRRTime(0);
     t->space->Execute(t->getName());
     //<TODO>
 }

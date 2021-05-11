@@ -286,6 +286,8 @@ Thread::Sleep (bool finishing)
 	    << "] to [" << RemainingBurstTime - RunTime << "]");
     	RemainingBurstTime = RemainingBurstTime - RunTime;
     }
+    RunTime = 0;
+    RRTime = 0;
     if (nextThread != this) kernel->scheduler->Run(nextThread, finishing);
     //<TODO>
 }

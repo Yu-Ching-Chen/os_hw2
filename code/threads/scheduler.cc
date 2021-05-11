@@ -88,8 +88,6 @@ Scheduler::ReadyToRun (Thread *thread)
     // Hint: L1 ReadyQueue is preemptive SRTN(Shortest Remaining Time Next).
     // When putting a new thread into L1 ReadyQueue, you need to check whether preemption or not.
     thread->setWaitTime(stats->userTicks);
-    thread->setRunTime(0);
-    thread->setRRTime(0);
 
     if (thread->getPriority() >= 100) {
         L1ReadyQueue->Insert(thread);
