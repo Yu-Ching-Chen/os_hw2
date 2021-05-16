@@ -87,24 +87,14 @@ Scheduler::ReadyToRun (Thread *thread)
     // After inserting Thread into ReadyQueue, don't forget to reset some values.
     // Hint: L1 ReadyQueue is preemptive SRTN(Shortest Remaining Time Next).
     // When putting a new thread into L1 ReadyQueue, you need to check whether preemption or not.
+
     thread->setWaitTime(stats->userTicks);
 
     if (thread->getPriority() >= 100) {
         L1ReadyQueue->Insert(thread);
-    	DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << stats->totalTicks << "]" 
-            << ": Thread "  << "[" << thread->getID() << "]" 
-            << " is inserted into queue L1");
-        if(kernel->currentThread != NULL) {
-            if (kernel->currentThread->getPriority() <= 99) {
-	    	kernel->interrupt->YieldOnReturn();
-	    }
-	    else {
-		if (thread->getRemainingBurstTime() 
-		    < kernel->currentThread->getRemainingBurstTime()) {
-		    kernel->interrupt->YieldOnReturn();
-                }
-	    }
-	}
+    	DEBUG(dbgMLFQ, "[InsertToQueue] Tick " << "[" << stats->totalTicks 
+	    << "]" << ": Thread "  << "[" << thread->getID() 
+	    << "]" << " is inserted into queue L1");
     }
     else if (thread->getPriority() >= 50) {
         L2ReadyQueue->Insert(thread);
@@ -377,6 +367,18 @@ Scheduler::UpdatePriority()
         ToRemove = NULL;
     }
     delete iter;
+
+    if (!L1ReadyQueue->IsEmpty()) {
+	if (kernel->currentThread->getPriority() <= 99) {
+	    kernel->interrupt->YieldOnReturn();
+        }	
+	else {
+	    if(L1ReadyQueue->Front()->getRemainingBurstTime() <
+	        kernel->currentThread->getRemainingBurstTime()) {
+                    kernel->interrupt->YieldOnReturn();
+            }
+        }
+    }
 }
 
 // <TODO>

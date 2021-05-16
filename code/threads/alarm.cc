@@ -64,7 +64,7 @@ Alarm::CallBack()
     t->setRunTime(t->getRunTime() + 100);
     t->setRRTime(t->getRRTime() + 100);
     if (t->getPriority() <= 49) {
-        if (t->getRRTime() == 200) {
+        if (t->getRRTime() % 200 == 0) {
             interrupt->YieldOnReturn();
         }
     }
