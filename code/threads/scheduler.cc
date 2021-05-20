@@ -34,8 +34,8 @@
 //<TODO>
 // Declare sorting rule of SortedList for L1 & L2 ReadyQueue
 // Hint: Funtion Type should be "static int"
-int L1_Rule(Thread *t1, Thread *t2);
-int L2_Rule(Thread *t1, Thread *t2);
+static int L1_Rule(Thread *t1, Thread *t2);
+static int L2_Rule(Thread *t1, Thread *t2);
 //<TODO>
 
 Scheduler::Scheduler()
