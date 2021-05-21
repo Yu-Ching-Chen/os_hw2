@@ -217,10 +217,10 @@ Thread::Yield()
     // 1. Put current_thread in running state to ready state
     // 2. Then, find next thread from ready state to push on running state
     // 3. After resetting some value of current_thread, then context switch
-    this->setStatus(READY);
-    kernel->scheduler->ReadyToRun(this);
     nextThread = kernel->scheduler->FindNextToRun();
-    if (nextThread != this) {
+    if (nextThread != NULL) {
+    	this->setStatus(READY);
+    	kernel->scheduler->ReadyToRun(this);
     	DEBUG(dbgMLFQ, "[ContextSwitch] Tick " << "[" << kernel->stats->totalTicks 
             << "]: Thread [" << nextThread->getID() 
             << "] is now selected for execution, thread [" 

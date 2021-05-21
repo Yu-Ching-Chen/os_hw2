@@ -303,19 +303,11 @@ Scheduler::UpdatePriority()
     int Ticks = kernel->stats->userTicks;
     int priority;
     Thread *t;
-    Thread *ToRemove = NULL;
     ListIterator<Thread *> *iter;
+    List<Thread *> *levelUp = new List<Thread *>;
 
     iter = new ListIterator<Thread *>(L2ReadyQueue);
     for (; !iter->IsDone(); iter->Next()) {
-        if (ToRemove != NULL) {
-	    L2ReadyQueue->Remove(ToRemove);
-    	    DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
-                << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
-                << " is removed from queue L2");
-            ReadyToRun(ToRemove);
-            ToRemove = NULL;
-        }
         t = iter->Item();
         if (Ticks - t->getWaitTime() >= 400) {
      	    priority = t->getPriority() + 10;
@@ -324,29 +316,25 @@ Scheduler::UpdatePriority()
                 << t->getPriority() << "] to [" << priority << "]");
             t->setPriority(priority);
             t->setWaitTime(Ticks);
-            if (priority >= 100) ToRemove = t;
+            if (priority >= 100) {
+	        levelUp->Append(t);
+    		DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" 
+		  << kernel->stats->totalTicks 
+            	  << "]" << ": Thread " << "[" << t->getID() << "]" 
+            	  << " is removed from queue L2");
+        	ReadyToRun(t);
+            }
         }
-    }
-    if (ToRemove != NULL) {
-	L2ReadyQueue->Remove(ToRemove);
-    	DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
-            << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
-            << " is removed from queue L2");
-        ReadyToRun(ToRemove);
-        ToRemove = NULL;
     }
     delete iter;
 
+    while(levelUp->NumInList() != 0)  {
+	t = levelUp->RemoveFront();
+        L2ReadyQueue->Remove(t);
+    }
+
     iter = new ListIterator<Thread *>(L3ReadyQueue);
     for (; !iter->IsDone(); iter->Next()) {
-        if (ToRemove != NULL) {
-	    L3ReadyQueue->Remove(ToRemove);
-    	    DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
-                << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
-                << " is removed from queue L3");
-            ReadyToRun(ToRemove);
-            ToRemove = NULL;
-        }
         t = iter->Item();
         if (Ticks - t->getWaitTime() >= 400) {
      	    priority = t->getPriority() + 10;
@@ -355,18 +343,24 @@ Scheduler::UpdatePriority()
                 << t->getPriority() << "] to [" << priority << "]");
             t->setPriority(priority);
             t->setWaitTime(Ticks);
-            if (priority >= 50) ToRemove = t;
+            if (priority >= 50) {
+                levelUp->Append(t);
+    		DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" 
+		    << kernel->stats->totalTicks 
+            	    << "]" << ": Thread " << "[" << t->getID() << "]" 
+            	    << " is removed from queue L3");
+       	  	ReadyToRun(t);
+	    }
         }
     }
-    if (ToRemove != NULL) {
-	L3ReadyQueue->Remove(ToRemove);
-    	DEBUG(dbgMLFQ, "[RemoveFromQueue] Tick " << "[" << kernel->stats->totalTicks 
-            << "]" << ": Thread " << "[" << ToRemove->getID() << "]" 
-            << " is removed from queue L3");
-        ReadyToRun(ToRemove);
-        ToRemove = NULL;
-    }
     delete iter;
+    
+    while(levelUp->NumInList() != 0) {
+	t = levelUp->RemoveFront();
+        L3ReadyQueue->Remove(t);
+    }
+
+    delete levelUp;
 
     if (!L1ReadyQueue->IsEmpty()) {
 	if (kernel->currentThread->getPriority() <= 99) {
